@@ -9,6 +9,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RootNamespace>Cissy</RootNamespace>
     <BaseOutputPath></BaseOutputPath>
+    <BaseIntermediateOutputPath />
+    <PackageOutputPath>C:\cissy\release</PackageOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <OutputPath>C:\cissy\release\</OutputPath>
