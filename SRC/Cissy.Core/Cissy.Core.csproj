@@ -8,7 +8,7 @@
     <Description>Cissy.Core</Description>
     <Copyright>bzure@outlook.com</Copyright>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>2.1.0</Version>
+    <Version>2.1.1</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <BaseOutputPath></BaseOutputPath>
   </PropertyGroup>
