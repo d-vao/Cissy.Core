@@ -25,10 +25,12 @@ using Cissy.WeiXin;
 using Cissy.Caching.Redis;
 using Cissy.RateLimit;
 using Cissy.Http;
+using Microsoft.AspNetCore.Components;
+using System.Net.Http;
 
 namespace Cissy
 {
-    public abstract class BlazorStartup
+    public abstract class BlazorServerStartup
     {
         public enum CissyConfigSourceKind
         {
@@ -130,14 +132,14 @@ namespace Cissy
         public CissyConfigSource _cissyConfigSource { get; set; } = new CissyConfigSource();
         public IConfiguration _configuration { get; }
         public IWebHostEnvironment _hostingEnvironment { get; }
-        public BlazorStartup(IConfiguration configuration, IWebHostEnvironment hostingEnvironment)
+        public BlazorServerStartup(IConfiguration configuration, IWebHostEnvironment hostingEnvironment)
         {
             _configuration = configuration;
             _hostingEnvironment = hostingEnvironment;
         }
-        public static void Start<T>(string[] args) where T : BlazorStartup
+        public static void Start<T>(string[] args) where T : BlazorServerStartup
         {
-            var pg = new Cissy.BlazorProgram<T>();
+            var pg = new Cissy.BlazorServerProgram<T>();
             pg.Start(args);
             _program = pg;
         }
@@ -148,8 +150,13 @@ namespace Cissy
         public abstract void _RegisterDTOMap(IMapperConfigurationExpression register);
         public virtual void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddServerSideBlazor();
+            services.AddScoped(sp => new HttpClient
+            {
+                BaseAddress = new Uri(sp.GetService<NavigationManager>().BaseUri)
+            });
+
             _InitCissyConfig(_cissyConfigSource);
             var CissyConfigBuilder = BuildCissyConfig(services, _cissyConfigSource);
             _ConfigureCissyDatabaseServices(CissyConfigBuilder);
@@ -275,8 +282,10 @@ namespace Cissy
             {
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
-                endpoints.MapFallbackToFile("index.html");
+                endpoints.MapBlazorHub();
+                endpoints.MapFallbackToPage("/_Host");
             });
+           
         }
     }
 }
