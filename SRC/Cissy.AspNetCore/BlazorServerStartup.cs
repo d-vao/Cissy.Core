@@ -150,7 +150,7 @@ namespace Cissy
         public abstract void _ConfigureAsp(IApplicationBuilder app, IWebHostEnvironment env);
         public abstract void _RegisterDTOMap(IMapperConfigurationExpression register);
         public abstract void _ConfigureServices(IServiceCollection services);
-       
+
         public virtual void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
@@ -283,6 +283,7 @@ namespace Cissy
             _ConfigureAsp(app, env);
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapBlazorHub();
                 _UseEndpoints(endpoints);
             });
 
@@ -291,7 +292,6 @@ namespace Cissy
         {
             //endpoints.MapRazorPages();
             //endpoints.MapControllers();
-            //endpoints.MapBlazorHub();
             endpoints.MapFallbackToPage("/_Host");
         }
     }
