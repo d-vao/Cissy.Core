@@ -273,7 +273,6 @@ namespace Cissy
             }
             if (_cissyConfigSource.HttpsRedirection)
                 app.UseHttpsRedirection();
-            app.UseBlazorFrameworkFiles();
             if (_cissyConfigSource.StartStaticFiles)
                 app.UseStaticFiles();
 
