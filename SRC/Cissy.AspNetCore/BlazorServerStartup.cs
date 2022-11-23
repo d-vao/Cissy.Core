@@ -27,6 +27,7 @@ using Cissy.RateLimit;
 using Cissy.Http;
 using Microsoft.AspNetCore.Components;
 using System.Net.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Cissy
 {
@@ -126,7 +127,7 @@ namespace Cissy
             /// 异常处理路径
             /// </summary>
             public string ExceptionHandlerPath { get; set; }
-           
+
         }
         static object _program { get; set; }
         public CissyConfigSource _cissyConfigSource { get; set; } = new CissyConfigSource();
@@ -148,6 +149,8 @@ namespace Cissy
         public abstract void _ConfigureAspServices(CissyConfigBuilder CissyConfigBuilder);
         public abstract void _ConfigureAsp(IApplicationBuilder app, IWebHostEnvironment env);
         public abstract void _RegisterDTOMap(IMapperConfigurationExpression register);
+        public abstract void _ConfigureServices(IServiceCollection services);
+       
         public virtual void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
@@ -156,7 +159,7 @@ namespace Cissy
             {
                 BaseAddress = new Uri(sp.GetService<NavigationManager>().BaseUri)
             });
-
+            _ConfigureServices(services);
             _InitCissyConfig(_cissyConfigSource);
             var CissyConfigBuilder = BuildCissyConfig(services, _cissyConfigSource);
             _ConfigureCissyDatabaseServices(CissyConfigBuilder);
@@ -280,12 +283,16 @@ namespace Cissy
             _ConfigureAsp(app, env);
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapRazorPages();
-                endpoints.MapControllers();
-                endpoints.MapBlazorHub();
-                endpoints.MapFallbackToPage("/_Host");
+                _UseEndpoints(endpoints);
             });
-           
+
+        }
+        public virtual void _UseEndpoints(IEndpointRouteBuilder endpoints)
+        {
+            //endpoints.MapRazorPages();
+            //endpoints.MapControllers();
+            //endpoints.MapBlazorHub();
+            endpoints.MapFallbackToPage("/_Host");
         }
     }
 }
