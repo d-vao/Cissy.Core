@@ -24,19 +24,11 @@ namespace Cissy.Authentication
         static Dictionary<string, string> parameter = new Dictionary<string, string>();
         public static void SetAuthBackUrlParameter(this HttpContext context, string urlParameter)
         {
-            if (context.User.IsNotNull() && context.User.IsCissyAuthenticated())
-            {
-                parameter[context.User.CissyUserId()] = urlParameter;
-            }
+            parameter[context.Connection.Id] = urlParameter;
         }
         public static bool TryGetAuthBackUrlParameter(this HttpContext context, out string urlParameter)
         {
-            urlParameter = string.Empty;
-            if (context.User.IsNotNull() && context.User.IsCissyAuthenticated())
-            {
-                return parameter.TryGetValue(context.User.CissyUserId(), out urlParameter);
-            }
-            return false;
+            return parameter.TryGetValue(context.Connection.Id, out urlParameter);
         }
     }
     public abstract class WeiXinAuthBaseController : ApiController

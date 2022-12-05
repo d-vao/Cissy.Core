@@ -26,6 +26,7 @@ using Cissy.Caching.Redis;
 using Cissy.RateLimit;
 using Cissy.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 
 namespace Cissy
 {
@@ -156,6 +157,7 @@ namespace Cissy
         {
             services.AddControllersWithViews();
             services.AddRazorPages();
+            //services.AddSingleton<CircuitHandler>(new CircuitHandlerService());
             _ConfigureServices(services);
             _InitCissyConfig(_cissyConfigSource);
             var CissyConfigBuilder = BuildCissyConfig(services, _cissyConfigSource);
