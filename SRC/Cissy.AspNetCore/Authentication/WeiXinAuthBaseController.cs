@@ -14,9 +14,31 @@ using System.Security.Claims;
 using Cissy.Configuration;
 using Microsoft.AspNetCore.WebUtilities;
 using Cissy.WeiXin;
+using Microsoft.AspNetCore.Http;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Cissy.Authentication
 {
+    public static class AuthBackUrlParameter
+    {
+        static Dictionary<string, string> parameter = new Dictionary<string, string>();
+        public static void SetAuthBackUrlParameter(this HttpContext context, string urlParameter)
+        {
+            if (context.User.IsNotNull() && context.User.IsCissyAuthenticated())
+            {
+                parameter[context.User.CissyUserId()] = urlParameter;
+            }
+        }
+        public static bool TryGetAuthBackUrlParameter(this HttpContext context, out string urlParameter)
+        {
+            urlParameter = string.Empty;
+            if (context.User.IsNotNull() && context.User.IsCissyAuthenticated())
+            {
+                return parameter.TryGetValue(context.User.CissyUserId(), out urlParameter);
+            }
+            return false;
+        }
+    }
     public abstract class WeiXinAuthBaseController : ApiController
     {
         protected ICissyConfig CissyConfig;
@@ -46,7 +68,19 @@ namespace Cissy.Authentication
                 //});
                 HttpContext.Response.Cookies.Append(AuthenticationHelper.BuildCookieName(this.Option.Scheme), builder.BuildToken(pricipal.Claims));
                 //return Content(builder.BuildToken(pricipal.Claims));
-                return Redirect(this.appConfig.AuthBackUrl);
+                var backurl = this.appConfig.AuthBackUrl;
+                if (this.HttpContext.TryGetAuthBackUrlParameter(out string parameter))
+                {
+                    if (parameter.IsNotNullAndEmpty())
+                    {
+                        if (backurl.EndsWith('/'))
+                        {
+                            backurl = backurl.Substring(0, backurl.Length - 1);
+                        }
+                        backurl += parameter;
+                    }
+                }
+                return Redirect(backurl);
             }
             else if (this.Option.AuthenticationType == AuthenticationTypes.Token)
             {

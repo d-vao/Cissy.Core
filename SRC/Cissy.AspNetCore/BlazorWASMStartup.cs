@@ -101,6 +101,10 @@ namespace Cissy
             /// </summary>
             public bool StartHttpProxy { get; set; }
             /// <summary>
+            /// 启用Session
+            /// </summary>
+            public bool StartSession { get; set; }
+            /// <summary>
             /// 启用微信Api并提供微信接口调用缓存接口
             /// </summary>
             public Func<CissyConfigBuilder, ICache> StartWeixinApi { get; set; }
@@ -235,6 +239,8 @@ namespace Cissy
                 else
                     CissyConfigBuilder.AddCissyAuthentication();
             }
+            if (CissyConfigSource.StartSession)
+                CissyConfigBuilder.ServiceCollection.AddSession();
             CissyConfigBuilder.RegisterMapper(reg =>
             {
                 _RegisterDTOMap(reg);
@@ -269,7 +275,8 @@ namespace Cissy
             app.UseBlazorFrameworkFiles();
             if (_cissyConfigSource.StartStaticFiles)
                 app.UseStaticFiles();
-
+            if (_cissyConfigSource.StartSession)
+                app.UseSession();
             //app.UseCookiePolicy();
 
             app.UseRouting();
