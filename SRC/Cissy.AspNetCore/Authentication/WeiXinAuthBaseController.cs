@@ -56,11 +56,18 @@ namespace Cissy.Authentication
                 {
                     if (parameter.IsNotNull() && parameter.UrlParameter.IsNotNullAndEmpty())
                     {
-                        if (backurl.EndsWith('/'))
+                        if (parameter.IsFullUrl)
                         {
-                            backurl = backurl.Substring(0, backurl.Length - 1);
+                            backurl = parameter.UrlParameter;
                         }
-                        backurl += parameter.UrlParameter;
+                        else
+                        {
+                            if (backurl.EndsWith('/'))
+                            {
+                                backurl = backurl.Substring(0, backurl.Length - 1);
+                            }
+                            backurl += parameter.UrlParameter;
+                        }
                     }
                 }
                 return Redirect(backurl);

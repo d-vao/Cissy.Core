@@ -21,19 +21,20 @@ namespace Cissy.Authentication
     {
         public string UrlParameter;
         public uint TimeStamp;
+        public bool IsFullUrl;
     }
     public static class AuthBackUrlParameter
     {
         static ConcurrentDictionary<string, AuthBackUrlItem> parameter = new ConcurrentDictionary<string, AuthBackUrlItem>();
-        public static string SetAuthBackUrlParameter(this HttpContext context, string urlParameter)
+        public static string SetAuthBackUrlParameter(this HttpContext context, string urlParameter, bool isFullUrl)
         {
             var id = DefaultIDGenerator.GenerateId().ToString();
-            parameter[id] = new AuthBackUrlItem { UrlParameter = urlParameter, TimeStamp = DateTime.Now.ToTimestamp() };
+            parameter[id] = new AuthBackUrlItem { UrlParameter = urlParameter, TimeStamp = DateTime.Now.ToTimestamp(), IsFullUrl = isFullUrl };
             return id;
         }
         public static string SetAuthBackUrlParameter(this HttpContext context)
         {
-            return context.SetAuthBackUrlParameter(context.Request.Path.Value);
+            return context.SetAuthBackUrlParameter(context.Request.Path.Value, false);
         }
         public static bool TryGetAuthBackUrlParameter(this HttpContext context, string sessionrandom, out AuthBackUrlItem item)
         {
