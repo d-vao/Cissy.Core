@@ -9,6 +9,16 @@ using System.Runtime.CompilerServices;
 
 namespace Cissy.IdGen
 {
+    public static class DefaultIDGenerator
+    {
+        public static long GenerateId()
+        {
+            var epoch = new DateTime(1978, 5, 6, 0, 0, 0, DateTimeKind.Utc);
+            var mc = new MaskConfig(45, 2, 16);
+            var g = new IdGenerator(0, epoch, mc);
+            return g.CreateId();
+        }
+    }
     /// <summary>
     /// Generates Id's inspired by Twitter's (late) Snowflake project.
     /// </summary>

@@ -12,9 +12,44 @@ using Microsoft.AspNetCore.Authentication;
 using Cissy.Authentication;
 using Cissy.Configuration;
 using Cissy.WeiXin;
+using Cissy.IdGen;
+using System.Collections.Concurrent;
 
 namespace Cissy.Authentication
 {
+    public class AuthBackUrlItem
+    {
+        public string UrlParameter;
+        public uint TimeStamp;
+    }
+    public static class AuthBackUrlParameter
+    {
+        static ConcurrentDictionary<string, AuthBackUrlItem> parameter = new ConcurrentDictionary<string, AuthBackUrlItem>();
+        public static string SetAuthBackUrlParameter(this HttpContext context, string urlParameter)
+        {
+            var id = DefaultIDGenerator.GenerateId().ToString();
+            parameter[id] = new AuthBackUrlItem { UrlParameter = urlParameter, TimeStamp = DateTime.Now.ToTimestamp() };
+            return id;
+        }
+        public static string SetAuthBackUrlParameter(this HttpContext context)
+        {
+            return context.SetAuthBackUrlParameter(context.Request.Path.Value);
+        }
+        public static bool TryGetAuthBackUrlParameter(this HttpContext context, string sessionrandom, out AuthBackUrlItem item)
+        {
+            ClearExpire();
+            return parameter.TryRemove(sessionrandom, out item);
+        }
+        static void ClearExpire()
+        {
+            var keys = parameter.Where(m => m.Value.TimeStamp + 15 < DateTime.Now.ToTimestamp())?.Select(m => m.Key)?.ToList();
+            if (keys.IsNotNullAndEmpty())
+            {
+                foreach (var key in keys)
+                    parameter.TryRemove(key, out AuthBackUrlItem item);
+            }
+        }
+    }
     /// <summary>
     /// 多个权限申明叠加，只要满足其中一个即授权
     /// </summary>
@@ -106,19 +141,20 @@ namespace Cissy.Authentication
             string url = default;
             if (this.Option.AuthenticationType == AuthenticationTypes.Cookie)
             {
+                var sessionrandom = context.SetAuthBackUrlParameter();
                 switch (this.Option.AuthenticationApply)
                 {
                     case AuthenticationApplies.Web:
                         //cookie+web,跳转
-                        url = Actor.Public.GetWxWebAuthUrl(this.Config, context.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}");
+                        url = Actor.Public.GetWxWebAuthUrl(this.Config, context.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}/{sessionrandom}");
                         return new RedirectResult(url);
                     case AuthenticationApplies.WxQR:
                         //cookie+web,跳转
-                        url = Actor.Public.GetWxQRAuthUrl(this.Config, context.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}");
+                        url = Actor.Public.GetWxQRAuthUrl(this.Config, context.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}/{sessionrandom}");
                         return new RedirectResult(url);
                     case AuthenticationApplies.WxMp:
                         //cookie+WxMp,跳转
-                        url = Actor.Public.GetWxMpAuthUrl(this.Config, context.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}");
+                        url = Actor.Public.GetWxMpAuthUrl(this.Config, context.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}/{sessionrandom}");
                         return new RedirectResult(url);
                     case AuthenticationApplies.WxApp:
                         //cookie+WxApp,不存在，抛异常

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,21 +17,11 @@ using Microsoft.AspNetCore.WebUtilities;
 using Cissy.WeiXin;
 using Microsoft.AspNetCore.Http;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Cissy.IdGen;
 
 namespace Cissy.Authentication
 {
-    public static class AuthBackUrlParameter
-    {
-        static Dictionary<string, string> parameter = new Dictionary<string, string>();
-        public static void SetAuthBackUrlParameter(this HttpContext context, string urlParameter)
-        {
-            parameter[context.Connection.Id] = urlParameter;
-        }
-        public static bool TryGetAuthBackUrlParameter(this HttpContext context, out string urlParameter)
-        {
-            return parameter.TryGetValue(context.Connection.Id, out urlParameter);
-        }
-    }
+
     public abstract class WeiXinAuthBaseController : ApiController
     {
         protected ICissyConfig CissyConfig;
@@ -48,28 +39,28 @@ namespace Cissy.Authentication
         public abstract void PreSignInAspect(CissyPassport passport, ClaimsPrincipal pricipal);
         public abstract IActionResult DoGrantIn(string group, string sessioncode, CissyPassport passport, ClaimsPrincipal pricipal);
         [HttpGet]
-        public IActionResult DoSignIn(string AuthenticationScheme, ClaimsPrincipal pricipal)
+        public IActionResult DoSignIn(string AuthenticationScheme, string sessionrandom, ClaimsPrincipal pricipal)
         {
             if (this.Option.AuthenticationType == AuthenticationTypes.Cookie)
             {
                 DefaultJwtPrincipalBuilder builder = new DefaultJwtPrincipalBuilder(this.appConfig.AuthSecret);
-                //HttpContext.Response.Cookies.Append(AuthenticationHelper.BuildCookieName(this.Option.Scheme), builder.BuildToken(pricipal.Claims), new Microsoft.AspNetCore.Http.CookieOptions()
-                //{
-                //    Expires = DateTime.Now.AddDays(1),
-                //    //HttpOnly = true
-                //});
+                HttpContext.Response.Cookies.Append(AuthenticationHelper.BuildCookieName(this.Option.Scheme), builder.BuildToken(pricipal.Claims), new Microsoft.AspNetCore.Http.CookieOptions()
+                {
+                    Expires = DateTime.Now.AddDays(1),
+                    //HttpOnly = true
+                });
                 HttpContext.Response.Cookies.Append(AuthenticationHelper.BuildCookieName(this.Option.Scheme), builder.BuildToken(pricipal.Claims));
                 //return Content(builder.BuildToken(pricipal.Claims));
                 var backurl = this.appConfig.AuthBackUrl;
-                if (this.HttpContext.TryGetAuthBackUrlParameter(out string parameter))
+                if (this.HttpContext.TryGetAuthBackUrlParameter(sessionrandom, out AuthBackUrlItem parameter))
                 {
-                    if (parameter.IsNotNullAndEmpty())
+                    if (parameter.IsNotNull() && parameter.UrlParameter.IsNotNullAndEmpty())
                     {
                         if (backurl.EndsWith('/'))
                         {
                             backurl = backurl.Substring(0, backurl.Length - 1);
                         }
-                        backurl += parameter;
+                        backurl += parameter.UrlParameter;
                     }
                 }
                 return Redirect(backurl);
@@ -91,15 +82,15 @@ namespace Cissy.Authentication
             return Redirect("~/");
         }
         [HttpGet]
-        [Route("cissy/core/auth/{AuthenticationScheme}")]
-        public IActionResult SignIn(string AuthenticationScheme, string token)
+        [Route("cissy/core/auth/{AuthenticationScheme}/{sessionrandom}")]
+        public IActionResult SignIn(string AuthenticationScheme, string sessionrandom, string token)
         {
             try
             {
                 DefaultJwtPrincipalBuilder builder = new DefaultJwtPrincipalBuilder(appConfig.AuthSecret);
                 var claimsPrincipal = builder.GetPrincipal(AuthenticationScheme, token);
                 PreSignInAspect(claimsPrincipal.GetWeiXinPassport(), claimsPrincipal);
-                return DoSignIn(AuthenticationScheme, claimsPrincipal);
+                return DoSignIn(AuthenticationScheme, sessionrandom, claimsPrincipal);
             }
             catch (Exception ep)
             {
@@ -116,15 +107,15 @@ namespace Cissy.Authentication
             string url = default;
             if (this.Option.AuthenticationApply == AuthenticationApplies.Web)
             {
-                url = Actor.Public.GetWxWebAuthUrl(appConfig, (this.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}"));
+                url = Actor.Public.GetWxWebAuthUrl(appConfig, (this.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}/0"));
             }
             else if (this.Option.AuthenticationApply == AuthenticationApplies.WxQR)
             {
-                url = Actor.Public.GetWxQRAuthUrl(appConfig, (this.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}"));
+                url = Actor.Public.GetWxQRAuthUrl(appConfig, (this.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}/0"));
             }
             else if (this.Option.AuthenticationApply == AuthenticationApplies.WxMp)
             {
-                url = Actor.Public.GetWxMpAuthUrl(appConfig, (this.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}"));
+                url = Actor.Public.GetWxMpAuthUrl(appConfig, (this.Request.BaseUrl() + $"/cissy/core/auth/{this.Option.Scheme}/0"));
             }
             else
                 return Content("微信小程序不支持跳转认证");
