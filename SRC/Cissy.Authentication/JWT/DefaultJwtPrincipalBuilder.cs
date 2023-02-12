@@ -39,35 +39,35 @@ namespace Cissy.Authentication.JWT
         }
         public ClaimsPrincipal GetPrincipal(string AuthenticationType, string token)
         {
-            //try
-            //{
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-
-            if (jwtToken == null)
-                return null;
-
-            var symmetricKey = Convert.FromBase64String(Secret);
-
-            var validationParameters = new TokenValidationParameters()
+            try
             {
-                RequireExpirationTime = true,
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                IssuerSigningKey = new SymmetricSecurityKey(symmetricKey),
-                AuthenticationType = AuthenticationType
-                //AuthenticationType = JwtBearerDefaults.AuthenticationScheme
-            };
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
 
-            SecurityToken securityToken;
-            var principal = tokenHandler.ValidateToken(token, validationParameters, out securityToken);
-            return principal;
-            //}
+                if (jwtToken == null)
+                    return null;
 
-            //catch (Exception)
-            //{
-            //    return null;
-            //}
+                var symmetricKey = Convert.FromBase64String(Secret);
+
+                var validationParameters = new TokenValidationParameters()
+                {
+                    RequireExpirationTime = true,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    IssuerSigningKey = new SymmetricSecurityKey(symmetricKey),
+                    AuthenticationType = AuthenticationType
+                    //AuthenticationType = JwtBearerDefaults.AuthenticationScheme
+                };
+
+                SecurityToken securityToken;
+                var principal = tokenHandler.ValidateToken(token, validationParameters, out securityToken);
+                return principal;
+            }
+
+            catch (Exception)
+            {
+                return default;
+            }
         }
     }
 }

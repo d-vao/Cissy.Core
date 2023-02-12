@@ -46,7 +46,7 @@ namespace Cissy.Authentication
                 DefaultJwtPrincipalBuilder builder = new DefaultJwtPrincipalBuilder(this.appConfig.AuthSecret);
                 HttpContext.Response.Cookies.Append(AuthenticationHelper.BuildCookieName(this.Option.Scheme), builder.BuildToken(pricipal.Claims), new Microsoft.AspNetCore.Http.CookieOptions()
                 {
-                    Expires = DateTime.Now.AddDays(1),
+                    //Expires = DateTime.Now.AddDays(1),
                     //HttpOnly = true
                 });
                 HttpContext.Response.Cookies.Append(AuthenticationHelper.BuildCookieName(this.Option.Scheme), builder.BuildToken(pricipal.Claims));
